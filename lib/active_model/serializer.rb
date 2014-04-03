@@ -52,7 +52,7 @@ end
           end
         end
       else
-        def serializer_for(resource, options = {})
+        def serializer_for(resource, options={})
           if resource.respond_to?(:to_ary)
             ArraySerializer
           else
