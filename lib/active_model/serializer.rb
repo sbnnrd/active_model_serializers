@@ -39,23 +39,31 @@ end
       end
 
       if RUBY_VERSION >= '2.0'
-        def serializer_for(resource)
+        def serializer_for(resource, options={})
           if resource.respond_to?(:to_ary)
             ArraySerializer
           else
             begin
-              Object.const_get "#{resource.class.name}Serializer"
+              _module = options.fetch(:namespace, Object)
+              _module.const_get "#{resource.class.name}Serializer"
             rescue NameError
               nil
             end
           end
         end
       else
-        def serializer_for(resource)
+        def serializer_for(resource, options = {})
           if resource.respond_to?(:to_ary)
             ArraySerializer
           else
-            "#{resource.class.name}Serializer".safe_constantize
+            _module  = options[:namespace]
+            klass, _namespace = "#{resource.class.name}Serializer", _module
+
+            if _namespace
+              "#{_namespace}::#{klass}".safe_constantize || klass.safe_constantize
+            else
+              klass.safe_constantize
+            end
           end
         end
       end
@@ -172,9 +180,15 @@ end
       end
     end
 
+    def association_options_for_serializer
+      { scope: scope }.tap do |hash|
+        hash[:namespace] = namespace if namespace
+      end
+    end
+
     def build_serializer(association)
       object = send(association.name)
-      association.build_serializer(object, scope: scope)
+      association.build_serializer(object, association_options_for_serializer)
     end
 
     def serialize(association)
@@ -197,5 +211,18 @@ end
       @wrap_in_array ? [hash] : hash
     end
     alias_method :serializable_hash, :serializable_object
+
+    def namespace
+      @namespace ||= begin
+        if ActiveModel::Serializer::CONFIG.namespace
+          get_namespace_name && Object.const_get(get_namespace_name)
+        end
+      end
+    end
+
+    def get_namespace_name
+      modules = self.class.name.split('::')
+      modules[0..-2].join('::') if modules.size > 1
+    end
   end
 end

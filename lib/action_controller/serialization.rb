@@ -63,13 +63,27 @@ module ActionController
 
     def build_json_serializer(resource, options = {})
       options = default_serializer_options.merge(options)
+      options = options.merge(namespace: namespace) unless namespace.nil?
 
-      if serializer = options.fetch(:serializer, ActiveModel::Serializer.serializer_for(resource))
+      if serializer = options.fetch(:serializer, ActiveModel::Serializer.serializer_for(resource, options))
         options[:scope] = serialization_scope unless options.has_key?(:scope)
         options[:resource_name] = controller_name if resource.respond_to?(:to_ary)
 
         serializer.new(resource, options)
       end
+    end
+
+    def namespace
+      @namespace ||= begin
+        if ActiveModel::Serializer::CONFIG.namespace
+          get_namespace_name && Object.const_get(get_namespace_name)
+        end
+      end
+    end
+
+    def get_namespace_name
+      modules = self.class.name.split('::')
+      modules[0..-2].join('::') if modules.size > 1
     end
   end
 end

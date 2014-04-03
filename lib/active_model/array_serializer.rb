@@ -20,8 +20,9 @@ module ActiveModel
       @meta            = options[@meta_key]
       @each_serializer = options[:each_serializer]
       @resource_name   = options[:resource_name]
+      @options         = options.merge(root: nil)
     end
-    attr_accessor :object, :scope, :root, :meta_key, :meta
+    attr_accessor :object, :scope, :root, :meta_key, :meta, :options
 
     def json_key
       if root.nil?
@@ -32,8 +33,8 @@ module ActiveModel
     end
 
     def serializer_for(item)
-      serializer_class = @each_serializer || Serializer.serializer_for(item) || DefaultSerializer
-      serializer_class.new(item, scope: scope)
+      serializer_class = @each_serializer || Serializer.serializer_for(item, options) || DefaultSerializer
+      serializer_class.new(item, @options)
     end
 
     def serializable_object
