@@ -83,7 +83,7 @@ module ActionController
 
     def get_namespace_name
       modules = self.class.name.split('::')
-      modules[0..-2].join('::') if modules.size > 1
+      modules.first if modules.size > 1
     end
   end
 end

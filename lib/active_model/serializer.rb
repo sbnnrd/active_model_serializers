@@ -44,10 +44,8 @@ end
             ArraySerializer
           else
             begin
-              namespace = options.fetch(:namespace, Object).name
-              resource_namespace, resource_name = resource.class.name.split('::')
-              _module = "#{namespace}::#{resource_namespace}".constantize
-              _module.const_get "#{resource_name}Serializer"
+              _module = options.fetch(:namespace, Object)
+              _module.const_get "#{resource.class.name}Serializer"
             rescue NameError
               nil
             end
